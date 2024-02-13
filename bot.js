@@ -5,12 +5,7 @@ require('dotenv').config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
-let lobbyInfo = getLobbyInfo(callback.data.lobby.id);
-let playerInfo = getPlayerInfo(ctx.update.callback_query.from.id)
-
 const startMesage = "Welcome! Here are some basic rules:\n1. There are 3 rounds\n2. Each round there are a random ammount of buckshot and blank rounds inside the shotgun\n3. You always start first, and you decide wether you shoot the dealer or yourseld\n4. If you shoot yourself with a blank, you get one more move, but if you shoot dealer with a blank, he's gonna move next.\n5. If you shoot yourself with a buckshot, you lose health, if you shoot dealer with a buckshot, he looses health. \n6. If you get to 0 health, dealer wins, if dealer gets to 0 health, he looses and you move to the next round. \n7. If you win three rounds in a row, you win the game. \n\nGood luck!";
-
-const endMessage = `Game has ended. Thank you for playing!\n\nHere are your stats:\n1. You played for ${lobbyInfo.round}s.\n2. And left with ${playerInfo.health} health.`
 
 let itemsDescriptions = "Here are items that can be helpful. \n"
 
@@ -94,7 +89,7 @@ bot.action('shoot_dealer', (ctx) => {
 });
 
 bot.launch().then(() => {
-    console.log('Bot has been started :D') // this doesnt work btw
+    console.log('Bot has been started :D') // this doesnt work btw // don't remember asking :p
 })
 
 // Enable graceful stop

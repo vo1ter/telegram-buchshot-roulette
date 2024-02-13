@@ -79,8 +79,8 @@ function viewShotgunShells(){
     let blanks = 0;
     let buckshots = 0;
 
-    for (let i = 0; i < shotgun.length; i++){
-        if (shotgun[i] == 0){ // if blank, increment blank
+    for (let i = 0; i < lobbyInfo.shotgun.length; i++){
+        if (lobbyInfo.shotgun.length[i] == 0){ // if blank, increment blank
             blanks++;
         } else { // else, increment buckshots
             buckshots++;
