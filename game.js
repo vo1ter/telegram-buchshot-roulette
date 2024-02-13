@@ -49,9 +49,21 @@ function getRandomNumber(min, max) { // "if you have questions, go fuck yourself
     return Math.random() * (max - min) + min;
 }
 
-function reloadShotgun(size) {
-    for(i = 0; i < size; i++) {
-        shotgun[i] = getRandomNumber(0,1);
+function reloadShotgun() {
+    if (shotgun.length == 0) { // if shotgun is empty
+        switch (shotgun){
+            case 1:  // if current round is 1, load 2 shells
+                size = 2;
+            case 2: // if current round is 2, load 4 shells
+                size = 4;
+            case 3: // if current round is 3, load 8 shells
+                size = 8;
+            default: // if issue, load 6(emergency stuff idk)
+                size = 6;
+            }
+        for (i = 0; i < size; i++) {
+            shotgun[i] = getRandomNumber(0, 1);
+        }
     }
 }
 
