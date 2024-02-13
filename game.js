@@ -79,8 +79,9 @@ function getRandomNumber(min, max) { // "if you have questions, go fuck yourself
     return Math.random() * (max - min) + min;
 }
 
-function reloadShotgun() {
-    let lobbyInfo = getLobbyInfo(callback.data.lobby.id);
+function reloadShotgun(lobbyId) {
+    let lobbyInfo = getLobbyInfo(lobbyId);
+
     if (lobbyInfo.shotgun.length == 0) { // if shotgun is empty
         switch (lobbyInfo.round){
             case 1:  // if current round is 1, load 2 shells
@@ -96,7 +97,7 @@ function reloadShotgun() {
         for (let i = 0; i < size; i++) { // loads the shotgun
             newShotgun.push(getRandomNumber(0, 1));
         }
-        changeLobbyInfo(callback.data.lobby.id, {
+        changeLobbyInfo(lobbyId, {
             action: "changeShotgunAmmo",
             data: {
                 newShotgunAmmo: newShotgun
@@ -167,9 +168,56 @@ function getLobbyInfo(lobbyId) {
 }
 
 // TODO: we need to create fucking lobbies
-// function createLobby() {
-//     let lobbyInfo = 
-// }
+function createLobby(ctx, userId) {
+    if(getLobbyInfo(userId) == undefined) {
+        let lobbyListFile = fs.readFileSync("./lobbies.json"); // read database
+        let lobbyList = JSON.parse(lobbyListFile); // get data about the current channel
+        lobbyList[`lobby-${userId}`] = {
+            players: [],
+            round: 1,
+            gameType: "Singleplayer",
+            activePlayer: 0,
+            shotgun: [],
+            isShotgunSawedOff: false,
+            aiHealth: 3,
+            aiInventory: []
+        }
+
+        try {
+            lobbyList[`lobby-${userId}`].players.push(userId);
+            fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyList)); // push local var with new id to the database
+            return ctx.reply('Let the game begin!\nCommands to play:\n/useitem - use item (shotgun, beer, handcuffs, etc.)'); // user isn't registered
+        }
+        catch (error) {
+            console.log(error)
+            return "error" // error :O (spooky)
+        }
+    }
+    else {
+        ctx.reply("You\\'re already participating in a game\\! Type /endgame to leave it\\.", {parse_mode: "MarkdownV2"})
+        return false;
+    }
+}
+
+function deleteLobby(ctx, lobbyId) {
+    if(getLobbyInfo(lobbyId) == undefined) {
+        ctx.reply("You\\'re not participating in any games\\! Type /startgame to start one\\.", {parse_mode: "MarkdownV2"})
+        return false
+    }
+    else {
+        let lobbyListFile = fs.readFileSync("./lobbies.json"); // read database
+        let lobbyList = JSON.parse(lobbyListFile); // get data about the current channel
+
+        try {
+            delete lobbyList[`lobby-${lobbyId}`]
+            fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyList)); // push local var with new id to the database
+        }
+        catch (error) {
+            console.log(error)
+            return "error" // error :O (spooky)
+        }
+    }
+}
 
 function changeLobbyInfo(lobbyId, callback) {
     let lobbyListFile = fs.readFileSync("./lobbies.json"); // read database
@@ -228,6 +276,10 @@ function removeItemFromInventory(userId, callback) {
             }
         })
     }
+}
+
+function startGame() {
+
 }
 
 async function game(ctx, callback) {
@@ -397,5 +449,7 @@ async function game(ctx, callback) {
 module.exports = {
     game,
     items,
-    addUser
+    addUser,
+    createLobby,
+    deleteLobby
 };

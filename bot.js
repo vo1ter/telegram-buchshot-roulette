@@ -17,9 +17,16 @@ for(let i = 0; i < items.itemNames.length; i++) {
     itemsDescriptions += `${i+1}. ${newItemIcons} ${newItemName} - ${newItemDescription}. `
 }
 
+bot.command('start', (ctx) => {
+    return ctx.reply(
+        'What do you want to do?',
+        Markup.keyboard(['Start game', 'Pepsi'])
+    )   
+})
+
 const startGameButtons = Markup.inlineKeyboard([
     [Markup.button.callback('Start game', 'startgame')],
-    [Markup.button.callback('Change gamemode', 'changemode')],
+    // [Markup.button.callback('Change gamemode', 'changemode')],
     [Markup.button.callback('Credits', 'credits')],
     [Markup.button.callback('Exit', 'exit')]
 ]);
@@ -39,9 +46,13 @@ bot.start((ctx) => {
     gameModule.addUser(ctx.update.message.from.id)
     ctx.reply(startMesage)
 });
-bot.command('startgame', (ctx) => ctx.reply('Let the game begin!'))
+bot.command('startgame', (ctx) => {
+    return gameModule.createLobby(ctx, ctx.update.message.from.id)
+})
 bot.command('useitem', (ctx) => ctx.reply("What item do you want to use?", inventoryButtons))
-bot.command('endgame', (ctx) => ctx.reply(endMessage))
+bot.command('endgame', (ctx) => {
+    return gameModule.deleteLobby(ctx, ctx.update.message.from.id)
+})
 
 bot.on('message', (ctx) => {
     if(ctx.update.message.text == "text") {
