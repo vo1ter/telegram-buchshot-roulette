@@ -67,7 +67,10 @@ function reloadShotgun() {
             newShotgun.push(getRandomNumber(0, 1));
         }
         changeLobbyInfo(callback.data.lobby.id, {
-            shotgun: [newShotgun]
+            action: "changeShotgunAmmo",
+            data: {
+                newShotgunAmmo: newShotgun
+            }
         });
     }
 }
