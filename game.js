@@ -152,7 +152,6 @@ function changePlayerInfo(userId, callback) {
         case "changeGameState":
             callback.data.item
             break;
-        
     }
 }
 

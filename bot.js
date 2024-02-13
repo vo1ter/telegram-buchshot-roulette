@@ -5,7 +5,12 @@ require('dotenv').config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN)
 
+let lobbyInfo = getLobbyInfo(callback.data.lobby.id);
+let playerInfo = getPlayerInfo(ctx.update.callback_query.from.id)
+
 const startMesage = "Welcome! Here are some basic rules:\n1. There are 3 rounds\n2. Each round there are a random ammount of buckshot and blank rounds inside the shotgun\n3. You always start first, and you decide wether you shoot the dealer or yourseld\n4. If you shoot yourself with a blank, you get one more move, but if you shoot dealer with a blank, he's gonna move next.\n5. If you shoot yourself with a buckshot, you lose health, if you shoot dealer with a buckshot, he looses health. \n6. If you get to 0 health, dealer wins, if dealer gets to 0 health, he looses and you move to the next round. \n7. If you win three rounds in a row, you win the game. \n\nGood luck!";
+
+const endMessage = `Game has ended. Thank you for playing!\n\nHere are your stats:\n1. You played for ${lobbyInfo.round}s.\n2. And left with ${playerInfo.health} health.`
 
 let itemsDescriptions = "Here are items that can be helpful. \n"
 
@@ -16,6 +21,13 @@ for(let i = 0; i < items.itemNames.length; i++) {
 
     itemsDescriptions += `${i+1}. ${newItemIcons} ${newItemName} - ${newItemDescription}. `
 }
+
+const startGameButtons = Markup.inlineKeyboard([
+    [Markup.button.callback('Start game', 'startgame')],
+    [Markup.button.callback('Change gamemode', 'changemode')],
+    [Markup.button.callback('Credits', 'credits')],
+    [Markup.button.callback('Exit', 'exit')]
+])
 
 const shootingButtons = Markup.inlineKeyboard([
     [Markup.button.callback('Shoot Yourself', 'shoot_yourself')],
@@ -36,7 +48,7 @@ bot.start((ctx) => {
 });
 bot.command('startgame', (ctx) => ctx.reply('Let the game begin!'))
 bot.command('useitem', (ctx) => ctx.reply("What item do you want to use?", inventoryButtons))
-bot.command('endgame', (ctx) => ctx.reply('Let the game begin!'))
+bot.command('endgame', (ctx) => ctx.reply(endMessage))
 
 bot.on('message', (ctx) => {
     if(ctx.update.message.text == "text") {
