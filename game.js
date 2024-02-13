@@ -50,8 +50,9 @@ function getRandomNumber(min, max) { // "if you have questions, go fuck yourself
 }
 
 function reloadShotgun() {
-    if (shotgun.length == 0) { // if shotgun is empty
-        switch (round){
+    let lobbyInfo = getLobbyInfo(callback.data.lobby.id);
+    if (lobbyInfo.shotgun.size == 0) { // if shotgun is empty
+        switch (lobbyInfo.round){
             case 1:  // if current round is 1, load 2 shells
                 size = 2;
             case 2: // if current round is 2, load 4 shells
@@ -63,8 +64,26 @@ function reloadShotgun() {
             }
         for (i = 0; i < size; i++) {
             shotgun[i] = getRandomNumber(0, 1);
+
+            changeLobbyInfo(callback.data.lobby.id, {
+                sh
+            })
         }
     }
+}
+
+function viewShotgunShells(){
+    blanks = 0;
+    buckshots = 0;
+
+    for (i = 0; i < shotgun.size; i++){
+        if (shotgun[i] == 0){ // if blank, increment blank
+            blanks++;
+        } else { // else, increment buckshots
+            buckshots++;
+        }
+    }
+    return blanks, buckshots;
 }
 
 function shootShotgun(callback) {
