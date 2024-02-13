@@ -22,20 +22,18 @@ const startGameButtons = Markup.inlineKeyboard([
     [Markup.button.callback('Change gamemode', 'changemode')],
     [Markup.button.callback('Credits', 'credits')],
     [Markup.button.callback('Exit', 'exit')]
-])
+]);
 
 const shootingButtons = Markup.inlineKeyboard([
-    [Markup.button.callback('Shoot Yourself', 'shoot_yourself')],
-    [Markup.button.callback('Shoot dealer', 'shoot_dealer')],
-])
+    [Markup.button.callback('Shoot yourself', 'shootYourself')],
+    [Markup.button.callback('Shoot dealer', 'shootOpponent')],
+]);
 
 const inventoryButtons = Markup.inlineKeyboard([
-    [Markup.button.callback('Use 🍺', 'use_beer')],
-    [Markup.button.callback('Use 🚬', 'use_cigarette')],
-    [Markup.button.callback('Use 🔍', 'use_magnifying_glass')],
-    [Markup.button.callback('Use 🔗', 'use_handcuffs')],
-    [Markup.button.callback('Use 🔪', 'use_saw')]
-])
+    [Markup.button.callback('🔫 Use shotgun', 'use_shotgun'), Markup.button.callback('🍺 Use beer', 'use_beer')],
+    [Markup.button.callback('🔍 Use magnifying', 'use_magnifying_glass'), Markup.button.callback('🔗 Use handcuffs', 'use_handcuffs')],
+    [Markup.button.callback('🔪 Use saw', 'use_saw'), Markup.button.callback('🚬 Use cigarette', 'use_cigarette')]
+]);
 
 bot.start((ctx) => {
     gameModule.addUser(ctx.update.message.from.id)
@@ -48,7 +46,7 @@ bot.command('endgame', (ctx) => ctx.reply(endMessage))
 bot.on('message', (ctx) => {
     if(ctx.update.message.text == "text") {
         return ctx.reply(
-            'What do you want to do?',shootingButtons
+            'What do you want to do?', shootingButtons
         )
     }
 });
@@ -62,6 +60,9 @@ bot.action(/^use_\w+$/, async (ctx) => {
     items.itemNames.forEach((element) => { allowedItems.push(element.toLowerCase()) })
 
     if(allowedItems.includes(item) == true) {
+        if(item == "shotgun") {
+            return ctx.editMessageText("Who do you wanna shoot?", shootingButtons)
+        }
         await gameModule.game(ctx, 
             {
                 action: "useItem",
@@ -73,7 +74,6 @@ bot.action(/^use_\w+$/, async (ctx) => {
                     author: "player"
                 }
             });
-        ctx.editMessageText(`You used ${item}`)
     }
 });
 
@@ -88,9 +88,7 @@ bot.action('shoot_dealer', (ctx) => {
     // Shooting logic
 });
 
-bot.launch().then(() => {
-    console.log('Bot has been started :D') // this doesnt work btw // don't remember asking :p
-})
+bot.launch()
 
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'))

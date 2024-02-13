@@ -45,6 +45,36 @@ async function addUser(userId) { // check if user exists in database
     }
 }
 
+function getPlayerInfo(userId) {
+    let playerListFile = fs.readFileSync("./players.json"); // read database
+    return JSON.parse(playerListFile)[`user-${userId}`]; // get data about the current player
+}
+
+function changePlayerInfo(userId, callback) {
+    let playerListFile = fs.readFileSync("./players.json"); // read database
+    let playerInfo = JSON.parse(playerListFile); // get data about the current player
+
+    switch(callback.action) {
+        case "changeHealth":
+            playerInfo[`user-${userId}`].health += callback.data.changeBy
+            fs.writeFileSync("./players.json", JSON.stringify(playerInfo));
+            break;
+        case "changeScore":
+            callback.data.newScore
+            break;
+        case "changeInventory":
+            playerInfo[`user-${userId}`].inventory = callback.data.newInventory
+            fs.writeFileSync("./players.json", JSON.stringify(playerInfo));
+            break;
+        case "changeLobbyState":
+            callback.data.item
+            break;
+        case "changeGameState":
+            callback.data.item
+            break;
+    }
+}
+
 function getRandomNumber(min, max) { // "if you have questions, go fuck yourself" @Andrii // "facts" @Maxim
     return Math.random() * (max - min) + min;
 }
@@ -75,9 +105,10 @@ function reloadShotgun() {
     }
 }
 
-function viewShotgunShells(){
+function viewShotgunShells(lobbyId) { // returns what's loaded rn
     let blanks = 0;
     let buckshots = 0;
+    let lobbyInfo = getLobbyInfo(callback.data.lobby.id)[`lobby-${lobbyId}`];
 
     for (let i = 0; i < lobbyInfo.shotgun.length; i++){
         if (lobbyInfo.shotgun.length[i] == 0){ // if blank, increment blank
@@ -90,13 +121,16 @@ function viewShotgunShells(){
 }
 
 function shootShotgun(callback) {
-    if (callback.action == "shoot_yourself") {
-        if (shotgun[0] == 0){
+    let lobbyInfo = getLobbyInfo(callback.data.lobby.id)[`lobby-${callback.data.lobby.id}`];
+
+    if (callback.action == "shootYourself") {
+        if (lobbyInfo.shotgun[0] == 0){
             changeLobbyInfo(callback.data.lobby.id, {
                 action: "cycleShotgun"
             })
             // next move is player
-        } else {
+        } 
+        else {
             changeLobbyInfo(callback.data.lobby.id, {
                 action: "cycleShotgun"
             })
@@ -106,13 +140,14 @@ function shootShotgun(callback) {
                 }
             })
         }
-    } else if (callback.action == "shoot_dealer") {
-        if (shotgun[0] == 0) {
+    } else if (callback.action == "shootOpponent") {
+        if (lobbyInfo.shotgun[0] == 0) {
             changeLobbyInfo(callback.data.lobby.id, {
                 action: "cycleShotgun"
             })
             // next move is dealer
-        } else {
+        } 
+        else {
             changeLobbyInfo(callback.data.lobby.id, {
                 action: "cycleShotgun"
             })
@@ -126,39 +161,15 @@ function shootShotgun(callback) {
     }
 }
 
-function getPlayerInfo(userId) {
-    let playerListFile = fs.readFileSync("./players.json"); // read database
-    return JSON.parse(playerListFile)[`user-${userId}`]; // get data about the current player
-}
-
-function changePlayerInfo(userId, callback) {
-    let playerListFile = fs.readFileSync("./players.json"); // read database
-    let playerInfo = JSON.parse(playerListFile); // get data about the current player
-
-    switch(callback.action) {
-        case "changeHealth":
-            playerInfo[`user-${userId}`].health += callback.data.changeBy
-            fs.writeFileSync("./players.json", JSON.stringify(playerInfo));
-            break;
-        case "changeScore":
-            callback.data.newScore
-            break;
-        case "changeItems":
-            callback.data.item
-            break;
-        case "changeLobbyState":
-            callback.data.item
-            break;
-        case "changeGameState":
-            callback.data.item
-            break;
-    }
-}
-
 function getLobbyInfo(lobbyId) {
     let lobbyListFile = fs.readFileSync("./lobbies.json"); // read database
     return JSON.parse(lobbyListFile)[`lobby-${lobbyId}`]; // get data about the current player
 }
+
+// TODO: we need to create fucking lobbies
+// function createLobby() {
+//     let lobbyInfo = 
+// }
 
 function changeLobbyInfo(lobbyId, callback) {
     let lobbyListFile = fs.readFileSync("./lobbies.json"); // read database
@@ -190,30 +201,99 @@ function changeLobbyInfo(lobbyId, callback) {
     }
 }
 
-async function game(ctx, callback) { // callback.action = start the game, use item, end game; callback.data = game data (e.g. used item, who lost)
+function removeItemFromInventory(userId, callback) {
+    if(callback.data.author == "player") {
+        let playerInfo = getPlayerInfo(userId)
+        playerInfo.inventory = playerInfo.inventory.filter((element) => {
+            return element != callback.data.item
+        })
+
+        changePlayerInfo(userId, {
+            action: "changeInventory",
+            data: {
+                newInventory: playerInfo.inventory
+            }
+        })
+    }
+    else if(callback.data.author == "ai") {
+        let lobbyInfo = getLobbyInfo(callback.data.lobby.id)
+        lobbyInfo.aiInventory = lobbyInfo.aiInventory.filter((element) => {
+            return element != callback.data.item
+        })
+
+        changeLobbyInfo(callback.data.lobby.id, {
+            action: "changeAiInventory",
+            data: {
+                newAiInventory: lobbyInfo.aiInventory
+            }
+        })
+    }
+}
+
+async function game(ctx, callback) {
     switch(callback.action) { // TODO: take items away from playes/ai when they use them. Also add actions when ai uses items
         case "gameStart":
             break;
         case "useItem":
-            (() => {
+            let checks = await ( async () => { // check if author is handcuffed and has an item
                 if(callback.data.author == "ai") {
-                    let lobbyInfo = getLobbyInfo(callback.data.lobby.id);
+                    let lobbyInfo = await getLobbyInfo(callback.data.lobby.id);
                     
-                    if(lobbyInfo.aiInventory.includes("HandcuffsOn") == true) {
+                    if(lobbyInfo.aiInventory.includes("HandcuffsOn") == true) { // first layer of checks, check if author is handcuffed
                         return "no-no wanna :("
+                    }
+                    else { // second layer, check if author has item
+                        if(lobbyInfo.aiInventory.includes(callback.data.item) == false) {
+                            return "no-no wanna :("
+                        }
                     }
                 }
                 else if(callback.data.author == "player") {
-                    let playerInfo = getPlayerInfo(ctx.update.callback_query.from.id)
+                    let playerInfo = await getPlayerInfo(ctx.update.callback_query.from.id)
 
-                    if(playerInfo.inventory.includes("HandcuffsOn") == true) {
+                    if(playerInfo.inventory.includes("HandcuffsOn") == true) { // first layer of checks, check if author is handcuffed
                         return "no-no wanna :("
                     }
+                    else { // second layer, check if author has item
+                        if(playerInfo.inventory.includes(callback.data.item) == false) {
+                            ctx.editMessageText(`You can't use this item because you don't have it in your inventory.`)
+                            return "no-no wanna :("
+                        }
+                    }
                 }
-            })()
+            })();
+
+            if(checks === "no-no wanna :(") { // if one of the check failes = terminate the switch statement
+                break;
+            }
+
             switch(callback.data.item) {
                 case "Shotgun":
-                    shootShotgun(callback.data.action)
+                    if(callback.data.action == "shootYourself") {
+                        if(callback.data.author == "player") {
+                            shootShotgun({
+                                action: "shootYourself",
+                                data: {
+                                    lobby: {
+                                        id: ctx.update.callback_query.from.id
+                                    }
+                                }
+                            })
+                        }
+                    }
+                    else if(callback.data.action == "shootOpponent") {
+                        if(callback.data.author == "player") {
+                            shootShotgun({
+                                action: "shootOpponent",
+                                data: {
+                                    lobby: {
+                                        id: ctx.update.callback_query.from.id
+                                    }
+                                }
+                            })
+                        }
+                    }
+                    
                     break;
                 case "Beer":
                     changeLobbyInfo(callback.data.lobby.id, {
@@ -275,12 +355,39 @@ async function game(ctx, callback) { // callback.action = start the game, use it
                                 newShotgunSawedOffStatus: true
                             }
                         })
+                        removeItemFromInventory(callback.data.lobby.id, callback) // test function, i don't want to reuse the code below every time i need to remove an item from some1's inventory. Needs testing.
+                        // if(callback.data.author == "player") {
+                        //     let playerInfo = getPlayerInfo(ctx.update.callback_query.from.id)
+                        //     playerInfo.inventory = playerInfo.inventory.filter((element) => {
+                        //         return element != callback.data.item
+                        //     })
+
+                        //     changePlayerInfo(ctx.update.callback_query.from.id, {
+                        //         action: "changeInventory",
+                        //         data: {
+                        //             newInventory: playerInfo.inventory
+                        //         }
+                        //     })
+                        // }
+                        // else if(callback.data.author == "ai") {
+                        //     lobbyInfo.aiInventory = lobbyInfo.aiInventory.filter((element) => {
+                        //         return element != callback.data.item
+                        //     })
+
+                        //     changeLobbyInfo(callback.data.lobby.id, {
+                        //         action: "changeAiInventory",
+                        //         data: {
+                        //             newAiInventory: lobbyInfo.aiInventory
+                        //         }
+                        //     })
+                        // }
                     }
                     else {
-                        return "i no-no wanna :("
+                        return ctx.editMessageText("You can't use this item, the shotgun is already sawn off.")
                     }
                     break;
             }
+            ctx.editMessageText(`You used ${callback.data.item}`)
             break;
         case "endGame":
             break;

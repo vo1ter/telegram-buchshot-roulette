@@ -1,15 +1,1 @@
-{
-  "lobby-5678161083": {
-    "players": [
-      5678161083
-    ],
-    "round": 1,
-    "gameType": "Singleplayer",
-    "shotgun": [],
-    "isShotgunSawedOff": true,
-    "aiHealth": 3,
-    "aiInventory": [
-      "HandcuffsOn"
-    ]
-  }
-}
+{"lobby-5678161083":{"players":[5678161083],"round":1,"gameType":"Singleplayer","shotgun":[],"isShotgunSawedOff":false,"aiHealth":3,"aiInventory":["HandcuffsOn"]}}
