@@ -51,7 +51,7 @@ function getRandomNumber(min, max) { // "if you have questions, go fuck yourself
 
 function reloadShotgun() {
     if (shotgun.length == 0) { // if shotgun is empty
-        switch (shotgun){
+        switch (round){
             case 1:  // if current round is 1, load 2 shells
                 size = 2;
             case 2: // if current round is 2, load 4 shells
