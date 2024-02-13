@@ -133,11 +133,12 @@ function getPlayerInfo(userId) {
 
 function changePlayerInfo(userId, callback) {
     let playerListFile = fs.readFileSync("./players.json"); // read database
-    let playerInfo = JSON.parse(playerListFile)[`user-${userId}`]; // get data about the current player
+    let playerInfo = JSON.parse(playerListFile); // get data about the current player
 
     switch(callback.action) {
         case "changeHealth":
-            playerInfo.health += callback.data.changeBy
+            playerInfo[`user-${userId}`].health += callback.data.changeBy
+            fs.writeFileSync("./players.json", JSON.stringify(playerInfo));
             break;
         case "changeScore":
             callback.data.newScore
@@ -162,23 +163,30 @@ function getLobbyInfo(lobbyId) {
 
 function changeLobbyInfo(lobbyId, callback) {
     let lobbyListFile = fs.readFileSync("./lobbies.json"); // read database
-    let lobbyInfo = JSON.parse(lobbyListFile)[`lobby-${lobbyId}`]; // get data about the current player
+    let lobbyInfo = JSON.parse(lobbyListFile); // get data about the current player
 
     switch(callback.action) {
-        case "changeShotgun":
-            callback.data.newShotgun
+        case "changeShotgunSawedOffStatus":
+            lobbyInfo[`lobby-${lobbyId}`].isShotgunSawedOff = callback.data.newShotgunSawedOffStatus
+            fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyInfo));
+            break;
+        case "changeShotgunAmmo":
+            callback.data.newShotgunAmmo
             break;
         case "changeAiInventory":
-            callback.data.newAiInventory
+            lobbyInfo[`lobby-${lobbyId}`].aiInventory = callback.data.newAiInventory
+            fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyInfo));
             break;
         case "changeAiHealth":
-            lobbyInfo.aiHealth += callback.data.changeBy
+            lobbyInfo[`lobby-${lobbyId}`].aiHealth += callback.data.changeBy
+            fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyInfo));
             break;
         case "endGame":
             callback.data.item
             break;
         case "cycleShotgun":
-            lobbyInfo.shotgun.shift();
+            lobbyInfo[`lobby-${lobbyId}`].shotgun.shift();
+            fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyInfo));
             break;
     }
 }
@@ -197,9 +205,9 @@ async function game(ctx, callback) { // callback.action = start the game, use it
                     }
                 }
                 else if(callback.data.author == "player") {
-                    let playerInfo = getPlayerInfo(ctx.update.message.from.id)
+                    let playerInfo = getPlayerInfo(ctx.update.callback_query.from.id)
 
-                    if(playerInfo.inventory.include("HandcuffsOn") == true) {
+                    if(playerInfo.inventory.includes("HandcuffsOn") == true) {
                         return "no-no wanna :("
                     }
                 }
@@ -213,9 +221,10 @@ async function game(ctx, callback) { // callback.action = start the game, use it
                         action: "cycleShotgun"
                     })
                     break;
-                case "Ciggarette":
+                case "Cigarette":
                     if(callback.data.author == "player") {
-                        changePlayerInfo(ctx.update.message.from.id, {
+                        changePlayerInfo(ctx.update.callback_query.from.id, {
+                            action: "changeHealth",
                             data: {
                                 changeBy: 1
                             }
@@ -225,7 +234,7 @@ async function game(ctx, callback) { // callback.action = start the game, use it
                 case "Magnifying glass":
                     if(callback.data.author == "player") {
                         let currentAmmo = (() => {
-                            const lobbyInfo = getLobbyInfo(ctx.update.message.from.id);
+                            const lobbyInfo = getLobbyInfo(ctx.update.callback_query.from.id);
     
                             if(lobbyInfo.shotgun[0] == 0) {
                                 return "Blank."
@@ -235,15 +244,21 @@ async function game(ctx, callback) { // callback.action = start the game, use it
                             }
                         })();
     
-                        ctx.sendMessage(currentAmmo, ctx.update.message.from.id)
+                        ctx.sendMessage(currentAmmo, ctx.update.callback_query.from.id)
                     }
                     break;
                 case "Handcuffs":
                     if(callback.data.author == "player") {
-                        let lobbyInfo = getLobbyInfo(callback.data.lobby.id);
+                        let lobbyInfo = getLobbyInfo(callback.data.lobby.id)
 
                         if(lobbyInfo.aiInventory.includes("HandcuffsOn") == false) {
-                            lobbyInfo.aiInventory.push("HandcuffsOn");
+                            lobbyInfo.aiInventory.push("HandcuffsOn")
+                            changeLobbyInfo(callback.data.lobby.id, {
+                                action: "changeAiInventory",
+                                data: {
+                                    newAiInventory: lobbyInfo.aiInventory
+                                }
+                            })
                         }
                         else {
                             return "i no-no wanna :("
@@ -255,6 +270,12 @@ async function game(ctx, callback) { // callback.action = start the game, use it
 
                     if(lobbyInfo.isShotgunSawedOff == false) {
                         lobbyInfo.isShotgunSawedOff = true;
+                        changeLobbyInfo(callback.data.lobby.id, {
+                            action: "changeShotgunSawedOffStatus",
+                            data: {
+                                newShotgunSawedOffStatus: true
+                            }
+                        })
                     }
                     else {
                         return "i no-no wanna :("
@@ -269,5 +290,6 @@ async function game(ctx, callback) { // callback.action = start the game, use it
 
 module.exports = {
     game,
-    items
+    items,
+    addUser
 };

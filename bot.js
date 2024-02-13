@@ -24,12 +24,16 @@ const shootingButtons = Markup.inlineKeyboard([
 
 const inventoryButtons = Markup.inlineKeyboard([
     [Markup.button.callback('Use 🍺', 'use_beer')],
-    [Markup.button.callback('Use 🚬', 'use_ciggarete')],
-    [Markup.button.callback('Use 🔍', 'use_magnifyingglass')],
+    [Markup.button.callback('Use 🚬', 'use_cigarette')],
+    [Markup.button.callback('Use 🔍', 'use_magnifying_glass')],
     [Markup.button.callback('Use 🔗', 'use_handcuffs')],
     [Markup.button.callback('Use 🔪', 'use_saw')]
 ])
 
+bot.start((ctx) => {
+    gameModule.addUser(ctx.update.message.from.id)
+    ctx.reply(startMesage)
+});
 bot.command('startgame', (ctx) => ctx.reply('Let the game begin!'))
 bot.command('useitem', (ctx) => ctx.reply("What item do you want to use?", inventoryButtons))
 bot.command('endgame', (ctx) => ctx.reply('Let the game begin!'))
@@ -44,21 +48,21 @@ bot.on('message', (ctx) => {
 
 // Using items
 
-bot.action(/^use_\w+$/, (ctx) => {
+bot.action(/^use_\w+$/, async (ctx) => {
     const action = ctx.match.input;
-    const item = action.split("use_")[1];
+    const item = action.split("use_")[1].replaceAll("_", " ");
     let allowedItems = []
     items.itemNames.forEach((element) => { allowedItems.push(element.toLowerCase()) })
 
     if(allowedItems.includes(item) == true) {
-        game(ctx, 
+        await gameModule.game(ctx, 
             {
                 action: "useItem",
                 data: {
                     lobby: {
-                        id: ctx.update.message.from.id
+                        id: ctx.update.callback_query.from.id
                     },
-                    item: item,
+                    item: item.charAt(0).toUpperCase() + item.slice(1), // all this shit is used to change the first letter from lowercase to uppercase
                     author: "player"
                 }
             });
@@ -76,8 +80,6 @@ bot.action('shoot_dealer', (ctx) => {
     return ctx.editMessageText('You decide to shoot dealer')
     // Shooting logic
 });
-
-bot.start((ctx) => ctx.reply(startMesage))
 
 bot.launch().then(() => {
     console.log('Bot has been started :D') // this doesnt work btw
