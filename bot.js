@@ -30,6 +30,10 @@ const inventoryButtons = Markup.inlineKeyboard([
     [Markup.button.callback('Use 🔪', 'use_saw')]
 ])
 
+bot.command('startgame', (ctx) => ctx.reply('Let the game begin!'))
+bot.command('useitem', (ctx) => ctx.reply("What item do you want to use?", inventoryButtons))
+bot.command('endgame', (ctx) => ctx.reply('Let the game begin!'))
+
 bot.on('message', (ctx) => {
     if(ctx.update.message.text == "text") {
         return ctx.reply(
@@ -39,31 +43,28 @@ bot.on('message', (ctx) => {
 });
 
 // Using items
-bot.action('use_beer', (ctx) => {
-    return ctx.editMessageText('You decide to use beer')
-    // Using beer logic
-});
 
-bot.action('use_ciggarete', (ctx) => {
-    return ctx.editMessageText('You decide to use ciggarete')
-    // Using ciggarete logic
-});
+bot.action(/^use_\w+$/, (ctx) => {
+    const action = ctx.match.input;
+    const item = action.split("use_")[1];
+    let allowedItems = []
+    items.itemNames.forEach((element) => { allowedItems.push(element.toLowerCase()) })
 
-bot.action('use_magnifyingglass', (ctx) => {
-    return ctx.editMessageText('You decide to use magnifying glass')
-    // Using magnifying glass logic
+    if(allowedItems.includes(item) == true) {
+        game(ctx, 
+            {
+                action: "useItem",
+                data: {
+                    lobby: {
+                        id: ctx.update.message.from.id
+                    },
+                    item: item,
+                    author: "player"
+                }
+            });
+        ctx.editMessageText(`You used ${item}`)
+    }
 });
-
-bot.action('use_handcuffs', (ctx) => {
-    return ctx.editMessageText('You decide to use handcuffs')
-    // Using handcuffs logic
-});
-
-bot.action('use_saw', (ctx) => {
-    return ctx.editMessageText('You decide to use saw')
-    // Using saw logic
-});
-
 
 // Shooting actions
 bot.action('shoot_yourself', (ctx) => {
@@ -77,10 +78,9 @@ bot.action('shoot_dealer', (ctx) => {
 });
 
 bot.start((ctx) => ctx.reply(startMesage))
-bot.command('startgame', (ctx) => ctx.reply('Let the game begin!'))
 
 bot.launch().then(() => {
-    console.log('Bot has been started :D')
+    console.log('Bot has been started :D') // this doesnt work btw
 })
 
 // Enable graceful stop
