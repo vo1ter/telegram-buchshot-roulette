@@ -1,0 +1,11 @@
+{
+    "lobby-123123": {
+        "players": [123, 123, 123],
+        "round": 1,
+        "gameType": "Singleplayer",
+        "shotgun": [0,1,1,0],
+        "isShotgunSawedOff": false,
+        "aiHealth": 0,
+        "aiInventory": []
+    }
+}
