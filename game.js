@@ -2,7 +2,7 @@ const fs = require('fs');
 
 const items = {
     itemIcons: ["🔫", "🍺", "🚬", "🔍", "🔗", "🔪"],
-    itemNames: ["Shotgun", "Beer", "Ciggarete", "Magnifying glass", "Handcuffs", "Saw"],
+    itemNames: ["Shotgun", "Beer", "Cigarette", "Magnifying glass", "Handcuffs", "Saw"],
     itemDescriptions: ["Shoot to shoot the shotgun", "Ejects current round inside the shotgun", "Regains one health point", "Shows current loaded round", "Skips opponents next move", "Deals double damage to opponent"]
 }
 
@@ -63,11 +63,12 @@ function reloadShotgun() {
                 size = 6;
             }
         for (i = 0; i < size; i++) {
-            shotgun[i] = getRandomNumber(0, 1);
+            let newShotgun = [];
+            newShotgun[i] = getRandomNumber(0, 1);
 
             changeLobbyInfo(callback.data.lobby.id, {
-                sh
-            })
+                shotgun: [newShotgun]
+            });
         }
     }
 }
