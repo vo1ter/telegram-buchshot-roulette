@@ -76,27 +76,40 @@ function changePlayerInfo(userId, callback) {
 }
 
 function getRandomNumber(min, max) { // "if you have questions, go fuck yourself" @Andrii // "facts" @Maxim
-    return Math.random() * (max - min) + min;
+    return Math.round(Math.random() * (max - min) + min);
 }
 
 function reloadShotgun(lobbyId) {
     let lobbyInfo = getLobbyInfo(lobbyId);
+    let size = 0;
+    let liveShellsLimit = 0;
 
     if (lobbyInfo.shotgun.length == 0) { // if shotgun is empty
         switch (lobbyInfo.round){
-            case 1:  // if current round is 1, load 2 shells
-                size = 2;
-            case 2: // if current round is 2, load 4 shells
-                size = 4;
-            case 3: // if current round is 3, load 8 shells
-                size = 8;
-            default: // if issue, load 6(emergency stuff idk)
+            case 1:  // if current round is 1, load 3 shells
+                size = 3;
+                liveShellsLimit = 1;
+                break;
+            case 2:
+                size = 5;
+                liveShellsLimit = 3;
+                break;
+            case 3:
                 size = 6;
+                liveShellsLimit = 4;
+                break;
+            default:
+                size = 6;
+                break;
             }
         let newShotgun = [];
+        let newShotgunLiveShells = 0
         for (let i = 0; i < size; i++) { // loads the shotgun
-            newShotgun.push(getRandomNumber(0, 1));
+            let newShell = getRandomNumber(0, 1);
+            if(newShell == 1) newShotgunLiveShells += 1
+            newShotgun.push(newShell);
         }
+        if(newShotgunLiveShells < liveShellsLimit) return reloadShotgun(lobbyId)
         changeLobbyInfo(lobbyId, {
             action: "changeShotgunAmmo",
             data: {
@@ -109,7 +122,7 @@ function reloadShotgun(lobbyId) {
 function viewShotgunShells(lobbyId) { // returns what's loaded rn
     let blanks = 0;
     let buckshots = 0;
-    let lobbyInfo = getLobbyInfo(callback.data.lobby.id)[`lobby-${lobbyId}`];
+    let lobbyInfo = getLobbyInfo(lobbyId);
 
     for (let i = 0; i < lobbyInfo.shotgun.length; i++){
         if (lobbyInfo.shotgun.length[i] == 0){ // if blank, increment blank
@@ -186,7 +199,10 @@ function createLobby(ctx, userId) {
         try {
             lobbyList[`lobby-${userId}`].players.push(userId);
             fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyList)); // push local var with new id to the database
-            return ctx.reply('Let the game begin!\nCommands to play:\n/useitem - use item (shotgun, beer, handcuffs, etc.)'); // user isn't registered
+            reloadShotgun(userId)
+
+            let shells = viewShotgunShells(userId); // BUG: NaN shells, undefined blanks. fix pls.
+            return ctx.reply(`Let the game begin!\n${shells.blanks + shells.buckshots} shells. ${shells.buckshots} live, ${shells.blanks} blank.\nCommands to play:\n/useitem - use item (shotgun, beer, handcuffs, etc.)`);
         }
         catch (error) {
             console.log(error)
@@ -211,6 +227,7 @@ function deleteLobby(ctx, lobbyId) {
         try {
             delete lobbyList[`lobby-${lobbyId}`]
             fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyList)); // push local var with new id to the database
+            return ctx.reply(`You successfully left lobby lobby-${lobbyId}`)
         }
         catch (error) {
             console.log(error)
@@ -229,7 +246,8 @@ function changeLobbyInfo(lobbyId, callback) {
             fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyInfo));
             break;
         case "changeShotgunAmmo":
-            callback.data.newShotgunAmmo
+            lobbyInfo[`lobby-${lobbyId}`].shotgun = callback.data.newShotgunAmmo
+            fs.writeFileSync("./lobbies.json", JSON.stringify(lobbyInfo));
             break;
         case "changeAiInventory":
             lobbyInfo[`lobby-${lobbyId}`].aiInventory = callback.data.newAiInventory

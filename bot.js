@@ -46,13 +46,9 @@ bot.start((ctx) => {
     gameModule.addUser(ctx.update.message.from.id)
     ctx.reply(startMesage)
 });
-bot.command('startgame', (ctx) => {
-    return gameModule.createLobby(ctx, ctx.update.message.from.id)
-})
+bot.command('startgame', (ctx) => { return gameModule.createLobby(ctx, ctx.update.message.from.id) });
 bot.command('useitem', (ctx) => ctx.reply("What item do you want to use?", inventoryButtons))
-bot.command('endgame', (ctx) => {
-    return gameModule.deleteLobby(ctx, ctx.update.message.from.id)
-})
+bot.command('endgame', (ctx) => { return gameModule.deleteLobby(ctx, ctx.update.message.from.id) })
 
 bot.on('message', (ctx) => {
     if(ctx.update.message.text == "text") {
